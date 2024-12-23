@@ -2,7 +2,7 @@
 File: test_discogs.py
 Created Date: 10 Dec 2024
 Author: Jake Skelton
-Date Modified: Tue Dec 10 2024
+Date Modified: Mon Dec 23 2024
 Copyright (c): 2024 Jake Skelton
 '''
 
@@ -17,10 +17,12 @@ with open('token.txt', 'r', newline='\n') as tokenfile:
     token = tokenfile.readline().rstrip()
 
 cli = dc.Client('JakeSearch', user_token=token)
+cli.backoff_enabled = True
 
 # For example
-for i in range(len(noalbum)):
-    entry = noalbum.iloc[i]
+idxs = noalbum.index
+for idx in idxs:
+    entry = noalbum.loc[idx]
     res = cli.search(track=entry.TrackTitle,
                      artist=entry.TrackArtist,
                      type='master').page(1)
@@ -28,9 +30,16 @@ for i in range(len(noalbum)):
     if numresults:
         first = res[0].main_release
         album = first.title
+        albumartist = first.artists[0].name  # TODO: Right choice?
+        year = first.year
+        # Modify dataframe in-place
+        # TODO: Check populated before overwrite?
+        noalbum.loc[idx, ['Album', 'AlbumArtist', 'Year']] = \
+            [album, albumartist, year]
     else:
         album = '-'
 
+    # TODO: Add progress counter
     print("%-50s : %50s"%(entry.TrackArtist + ' - ' + entry.TrackTitle, album))
 
-    time.sleep(1)
+    time.sleep(2)
