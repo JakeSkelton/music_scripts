@@ -9,7 +9,16 @@ import numpy as np
 import pandas as pd
 import discogs_client as dc
 import time
-from urllib.error import HTTPError
+
+
+def RobustPageFetch(results: list) -> dc.models.Release:
+    try:
+        return results[0].main_release
+    except IndexError:
+        return None
+    except dc.exceptions.HTTPError:
+        return RobustPageFetch(results[1:])
+
 
 infile = '../songs.csv'
 outfile = '../songs_with_ids.csv'
@@ -33,13 +42,13 @@ for idx in idxs:
     res = cli.search(track=entry.TrackTitle,
                      artist=entry.TrackArtist,
                      type='master').page(1)
-    numresults = len(res)
-    if numresults:
-        try:
-            first = res[0].main_release
-        except HTTPError:
-            first = res[1].main_release  # Just doing next not very robust
+    first = RobustPageFetch(res)
+
+    if first:
+        # Not None, empty, etc
         songs.loc[idx, 'ID'] = first.id
+    else:
+        continue
 
     # Write to outfile every 20 entries
     if not (idx%20):
