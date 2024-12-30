@@ -9,6 +9,18 @@ import numpy as np
 import pandas as pd
 import discogs_client as dc
 import time
+from json.decoder import JSONDecodeError
+
+
+def RobustSearch(client: dc.client.Client, tracktitle: str, trackartist:str
+                 ) -> dc.models.Release:
+    try:
+        res = cli.search(track=tracktitle, artist=trackartist, type='master'
+                         ).page(1)
+        return RobustPageFetch(res)
+    except dc.exceptions.HTTPError or JSONDecodeError:
+        time.sleep(30)
+        return RobustSearch(client, tracktitle, trackartist)
 
 
 def RobustPageFetch(results: list) -> dc.models.Release:
@@ -39,14 +51,11 @@ for idx in idxs:
     print("\r%4d/%-4d"%(idx, len(songs)), end='')
 
     entry = hastags.loc[idx]
-    res = cli.search(track=entry.TrackTitle,
-                     artist=entry.TrackArtist,
-                     type='master').page(1)
-    first = RobustPageFetch(res)
+    res = RobustSearch(cli, entry.TrackTitle, entry.TrackArtist)
 
-    if first:
+    if res:
         # Not None, empty, etc
-        songs.loc[idx, 'ID'] = first.id
+        songs.loc[idx, 'ID'] = res.id
     else:
         continue
 
@@ -54,4 +63,4 @@ for idx in idxs:
     if not (idx%20):
         songs.iloc[:idx].to_csv(outfile)
 
-    time.sleep(2)
+    # time.sleep(2)
