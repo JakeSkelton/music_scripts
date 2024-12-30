@@ -18,7 +18,7 @@ def RobustSearch(client: dc.client.Client, tracktitle: str, trackartist:str
         res = cli.search(track=tracktitle, artist=trackartist, type='master'
                          ).page(1)
         return RobustPageFetch(res)
-    except dc.exceptions.HTTPError or JSONDecodeError:
+    except (dc.exceptions.HTTPError, JSONDecodeError):
         time.sleep(30)
         return RobustSearch(client, tracktitle, trackartist)
 
