@@ -2,7 +2,7 @@
 File: discogs_id3_completer.py
 Created Date: 30 Dec 2024
 Author: Jake Skelton
-Date Modified: Mon Dec 30 2024
+Date Modified: Thu Jan 02 2025
 Copyright (c): 2024 Jake Skelton
 '''
 import numpy as np
@@ -39,6 +39,8 @@ songs = pd.read_csv(infile, delimiter=',', index_col=0, on_bad_lines='warn',
 hasid = songs[pd.notna(songs.ID)]
 newentries = hasid.copy()
 # TODO: Parse tracknums. Something like 3/4 should -> 3
+tofill = songs[(pd.isna(songs.AlbumArtist) | pd.isna(songs.Album)) &
+               pd.isna(songs.ID)]
 
 with open('token.txt', 'r', newline='\n') as tokenfile:
     token = tokenfile.readline().rstrip()
