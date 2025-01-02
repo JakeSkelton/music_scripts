@@ -2,7 +2,7 @@
 File: discogs_associate.py
 Created Date: 30 Dec 2024
 Author: Jake Skelton
-Date Modified: Mon Dec 30 2024
+Date Modified: Thu Jan 02 2025
 Copyright (c): 2024 Jake Skelton
 '''
 import numpy as np
@@ -15,7 +15,9 @@ from json.decoder import JSONDecodeError
 def RobustSearch(client: dc.client.Client, tracktitle: str, trackartist:str
                  ) -> dc.models.Release:
     try:
-        res = cli.search(track=tracktitle, artist=trackartist, type='master'
+        res = cli.search(track=tracktitle,
+                         artist=trackartist,
+                         type='master,release'
                          ).page(1)
         return RobustPageFetch(res)
     except (dc.exceptions.HTTPError, JSONDecodeError):
@@ -26,6 +28,11 @@ def RobustSearch(client: dc.client.Client, tracktitle: str, trackartist:str
 def RobustPageFetch(results: list) -> dc.models.Release:
     try:
         return results[0].main_release
+    except AttributeError as err:
+        if isinstance(results[0], dc.models.Release):
+            return results[0]  # No main_release property for Release
+        else:
+            raise err
     except IndexError:
         return None
     except dc.exceptions.HTTPError:
